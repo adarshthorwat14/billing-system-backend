@@ -1,22 +1,28 @@
-# Use official OpenJDK 17 image
-FROM openjdk:17-jdk-slim
+# Stage 1: build with Maven
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 
-# Set working directory inside container
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml
-COPY mvnw .
-COPY .mvn .mvn
+# Copy only the files needed to download deps (cache layer)
 COPY pom.xml .
+COPY .mvn .mvn
+COPY mvnw .
 
-# Download dependencies
-RUN ./mvnw dependency:go-offline
+# Download dependencies (cache layer)
+RUN mvn dependency:go-offline -B
 
-# Copy the rest of the code
+# Copy source and build
 COPY src ./src
+RUN mvn clean package -DskipTests -B
 
-# Build the Spring Boot project
-RUN ./mvnw clean package -DskipTests
+# Stage 2: run with minimal JRE
+FROM openjdk:17-jdk-slim
 
-# Run the built jar
-CMD ["java", "-jar", "target/billing-system-0.0.1-SNAPSHOT.jar"]
+WORKDIR /app
+
+# Copy artifact from build stage (ensure name matches target jar)
+COPY --from=build /app/target/billing-system-0.0.1-SNAPSHOT.jar app.jar
+
+EXPOSE 8080
+
+ENTRYPOINT ["java","-jar","/app/app.jar"]
