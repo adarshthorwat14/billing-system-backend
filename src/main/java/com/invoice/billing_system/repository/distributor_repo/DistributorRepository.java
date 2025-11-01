@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 public interface DistributorRepository extends JpaRepository<Distributor, String> {
 	
 	Optional<Distributor> findByEmail(String email);
+	Optional<Distributor> findTopByOrderByIdDesc();
   
 }
 

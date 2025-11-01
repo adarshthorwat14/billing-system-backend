@@ -20,21 +20,37 @@ public class DistributorService {
     @Autowired
 	private JdbcTemplate jdbcTemplate;
 
-    public Distributor saveDistributor(Distributor distributor) {
-//        String newId = generateDistributorId();
-//        distributor.setId(newId);
-//        distributor.setCreatedDate(LocalDate.now());
-//        return distributorRepository.save(distributor);
-    	
-    	if (distributor.getId() == null || distributor.getId().isEmpty()) {
-			Long nextVal = jdbcTemplate.queryForObject("SELECT nextval('distributor_id_seq')", Long.class);
-			String formattedId = String.format("DIST%05d", nextVal);
-			distributor.setId(formattedId);
-			distributor.setCreatedDate(LocalDate.now());
-		}
-		return distributorRepository.save(distributor);
-    }
+//    public Distributor saveDistributor(Distributor distributor) {
+////        String newId = generateDistributorId();
+////        distributor.setId(newId);
+////        distributor.setCreatedDate(LocalDate.now());
+////        return distributorRepository.save(distributor);
+//    	
+//    	if (distributor.getId() == null || distributor.getId().isEmpty()) {
+//			Long nextVal = jdbcTemplate.queryForObject("SELECT nextval('distributor_id_seq')", Long.class);
+//			String formattedId = String.format("DIST%05d", nextVal);
+//			distributor.setId(formattedId);
+//			distributor.setCreatedDate(LocalDate.now());
+//		}
+//		return distributorRepository.save(distributor);
+//    }
     
+    
+    public Distributor saveDistributor(Distributor distributor) {
+        if (distributor.getId() == null || distributor.getId().isEmpty()) {
+            String lastId = distributorRepository.findTopByOrderByIdDesc()
+                                                 .map(Distributor::getId)
+                                                 .orElse("DIST00000");
+
+            int lastNumber = Integer.parseInt(lastId.replace("DIST", ""));
+            String newId = String.format("DIST%05d", lastNumber + 1);
+            distributor.setId(newId);
+            distributor.setCreatedDate(LocalDate.now());
+        }
+
+        return distributorRepository.save(distributor);
+    }
+
     
     
     public List<Distributor> getAllDistributors() {
